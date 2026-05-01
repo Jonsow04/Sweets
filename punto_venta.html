@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sweets Dreams - POS</title>
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/estilo_puntoventa.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/funciones_puntoventa.js" defer></script>
+</head>
+
+<body>
+
+    <body>
+
+        <!-- NAVBAR CON BUSCADOR Y BOTONES -->
+        <nav class="navbar navbar-expand-lg navbar-pos">
+            <div class="container-fluid">
+                <a class="navbar-brand fw-bold" href="#">🍬 SWEET DREAMS</a>
+
+                <div class="collapse navbar-collapse">
+                    <!-- BUSCADOR CENTRAL -->
+                    <form class="d-flex mx-auto" onsubmit="return false;">
+                        <input class="form-control search-nav" type="search" id="navSearch" placeholder="🔍 Buscar producto o ID..." onkeyup="filtrarInventario()">
+                    </form>
+
+                    <!-- BOTONES DE ACCIÓN -->
+                    <div class="navbar-nav">
+                        <button class="btn nav-btn" onclick="verSeccion('historial')">🕒 Historial</button>
+                        <button class="btn nav-btn" onclick="verSeccion('vendidos')">⭐ Más Vendidos</button>
+                        <button class="btn nav-btn" onclick="abrirGestionProductos('productos')">📦 Productos</button>
+                        <div class="vr mx-2"></div>
+                        <button class="btn nav-btn" onclick="verSeccion('usuario')">👤 Usuario</button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="app-container">
+            <!-- IZQUIERDA: CATÁLOGO RÁPIDO -->
+            <div class="sidebar-left">
+                <div class="p-3 fw-bold border-bottom small text-muted">CATÁLOGO</div>
+                <div class="product-list" id="listaRapida">
+                    <!-- JS inyecta productos aquí -->
+                </div>
+            </div>
+
+            <!-- CENTRO: TABLA DE VENTA -->
+            <div class="main-content">
+                <h5 class="mb-3 fw-bold">Venta Actual</h5>
+                <div class="table-responsive">
+                    <table class="table" id="tablaVentas">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Descripción</th>
+                                <th>Precio</th>
+                                <th class="col-cant">Cant.</th>
+                                <th>Total</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Items de venta -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- DERECHA: COBRO -->
+            <div class="sidebar-right">
+                <h6>Resumen</h6>
+                <div class="total-display">
+                    <small>TOTAL A COBRAR</small>
+                    <div class="h2 m-0 fw-bold" id="granTotal">$0.00</div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="small text-muted" for="metodoPago">Método de pago</label>
+                    <select id="metodoPago" class="form-select border-0 bg-light">
+                        <option>Efectivo</option>
+                        <option>Tarjeta</option>
+                        <option>Transferencia</option>
+                    </select>
+                </div>
+
+                <button class="btn-pay" data-bs-toggle="modal" data-bs-target="#ticketModal">
+                FINALIZAR VENTA
+            </button>
+            </div>
+        </div>
+
+        <!-- MODAL TICKET (TU LÓGICA) -->
+        <div class="modal fade" id="ticketModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-sm modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-body ticket-font" id="impresionTicket">
+                        <div class="text-center mb-3">
+                            <strong>SWEET DREAMS</strong><br>
+                            <span id="fechaTicket"></span>
+                        </div>
+                        <div id="listaProductosTicket"></div>
+                        <hr>
+                        <div class="d-flex justify-content-between fw-bold">
+                            <span>TOTAL</span>
+                            <span id="totalTicketModal"></span>
+                        </div>
+                    </div>
+                    <div class="modal-footer p-1 border-0">
+                        <button type="button" class="btn btn-primary w-100" onclick="confirmarVenta()">CERRAR</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+
+</html>

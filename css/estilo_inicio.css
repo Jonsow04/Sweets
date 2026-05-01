@@ -1,0 +1,219 @@
+ :root {
+    --pink-deep: #c2185b;
+    --pink-mid: #e91e8c;
+    --pink-light: #fce4ec;
+    --pink-pale: #fff0f6;
+    --cream: #fffaf8;
+    --dark: #1a0a10;
+    --muted: #9e7a89;
+    --border: #f3c6d8;
+    --font-serif: 'Georgia', 'Times New Roman', serif;
+    --font-sans: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--pink-pale);
+    background-image: radial-gradient(ellipse 80% 60% at 70% 10%, #fbb6ce55 0%, transparent 60%), radial-gradient(ellipse 60% 80% at 10% 90%, #f48fb155 0%, transparent 60%);
+    font-family: var(--font-sans);
+    overflow: hidden;
+}
+
+
+/*degradados para mejor decoracion*/
+
+.blob {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(60px);
+    opacity: 0.25;
+    pointer-events: none;
+    animation: drift 8s ease-in-out infinite alternate;
+}
+
+.blob-1 {
+    width: 420px;
+    height: 420px;
+    background: #f06292;
+    top: -120px;
+    right: -80px;
+    animation-delay: 0s;
+}
+
+.blob-2 {
+    width: 300px;
+    height: 300px;
+    background: #ce93d8;
+    bottom: -80px;
+    left: -60px;
+    animation-delay: -3s;
+}
+
+.blob-3 {
+    width: 180px;
+    height: 180px;
+    background: #ffb74d;
+    bottom: 120px;
+    right: 60px;
+    animation-delay: -5s;
+}
+
+@keyframes drift {
+    from {
+        transform: translate(0, 0) scale(1);
+    }
+    to {
+        transform: translate(15px, -20px) scale(1.05);
+    }
+}
+
+
+/* contenedor con las cosillas*/
+
+.wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    max-width: 860px;
+    width: 95%;
+    border-radius: 28px;
+    overflow: hidden;
+    background: var(--cream);
+    box-shadow: 0 30px 80px rgba(194, 24, 91, 0.18), 0 4px 16px rgba(0, 0, 0, 0.06);
+    animation: rise 0.7s cubic-bezier(.22, .68, 0, .99) both;
+    position: relative;
+    z-index: 10;
+}
+
+@keyframes rise {
+    from {
+        opacity: 0;
+        transform: translateY(40px) scale(.97);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+
+/*lado izquierdo*/
+
+.panel-left {
+    background: linear-gradient(145deg, #e91e8c 0%, #c2185b 60%, #880e4f 100%);
+    padding: 56px 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    color: #fff;
+    position: relative;
+}
+
+.brand-name {
+    font-family: var(--font-serif);
+    font-size: 2rem;
+    font-weight: bold;
+    line-height: 1.1;
+}
+
+.brand-name em {
+    font-style: italic;
+    font-weight: normal;
+    display: block;
+    font-size: 1.35rem;
+    opacity: 0.85;
+}
+
+.tagline {
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.65);
+    margin-top: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+@keyframes wiggle {
+    0%,
+    100% {
+        transform: rotate(-5deg);
+    }
+    50% {
+        transform: rotate(5deg);
+    }
+}
+
+
+/*formulario*/
+
+.panel-right {
+    padding: 52px 44px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.form-title {
+    font-family: var(--font-serif);
+    font-size: 1.55rem;
+    font-weight: bold;
+    color: var(--dark);
+    margin-bottom: 4px;
+}
+
+.form-sub {
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin-bottom: 32px;
+}
+
+.field {
+    margin-bottom: 20px;
+}
+
+.field label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: bold;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--pink-deep);
+    margin-bottom: 7px;
+}
+
+.field input {
+    width: 100%;
+    padding: 13px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+    background: var(--pink-pale);
+    outline: none;
+    transition: 0.2s;
+}
+
+.field input:focus {
+    border-color: var(--pink-deep);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(194, 24, 91, 0.1);
+}
+
+.btn-login {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #e91e8c, #c2185b);
+    color: #fff;
+    border: none;
+    border-radius: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s;
+    box-shadow: 0 6px 20px rgba(194, 24, 91, 0.35);
+}
+
+.btn-login:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+}
