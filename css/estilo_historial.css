@@ -1,0 +1,22 @@
+.list-group-item {
+    background-color: #fffaf8;
+    border-radius: 12px !important;
+    transition: transform 0.2s;
+}
+
+.list-group-item:hover {
+    transform: translateY(-3px);
+}
+
+.border-danger {
+    border-color: #e91e8c !important;
+}
+
+.badge.bg-success {
+    background-color: #c2185b !important;
+}
+
+#userTag {
+    font-weight: 500;
+    color: #c2185b;
+}

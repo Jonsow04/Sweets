@@ -75,8 +75,7 @@ function borrarItem(idx) {
     carrito.splice(idx, 1);
     renderVenta();
 }
-
-// Lógica de Ticket
+//ticket
 document.getElementById('ticketModal').addEventListener('show.bs.modal', () => {
     document.getElementById('fechaTicket').textContent = new Date().toLocaleString();
     const cont = document.getElementById('listaProductosTicket');
@@ -98,9 +97,112 @@ function confirmarVenta() {
     bootstrap.Modal.getInstance(document.getElementById('ticketModal')).hide();
 }
 
-function verSeccion(sec) {
-    alert("Abriendo sección: " + sec.toUpperCase());
+function mostrarHistorialCompleto() {
+    const ventas = JSON.parse(localStorage.getItem('historial')) || [];
+    const contenedor = document.getElementById('contenedorHistorial'); // ID en historial.html
+
+    if (ventas.length === 0) {
+        contenedor.innerHTML = "<p class='text-center'>No hay ventas registradas.</p>";
+        return;
+    }
+
+    contenedor.innerHTML = ventas.map(v => `
+        <div class="card mb-3 shadow-sm">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-0">Ticket: ${v.folio}</h6>
+                    <small class="text-muted">${v.fecha}</small>
+                </div>
+                <div class="text-end">
+                    <span class="fw-bold text-success">$${v.total.toFixed(2)}</span><br>
+                    <small>Atendió: ${v.cajero || 'Admin'}</small>
+                </div>
+            </div>
+        </div>
+    `).reverse().join('');
 }
 
-// Inicio
+function mostrarHistorialCompleto() {
+    const ventas = JSON.parse(localStorage.getItem('historial')) || [];
+    const contenedor = document.getElementById('contenedorHistorial');
+
+    if (ventas.length === 0) {
+        contenedor.innerHTML = "<p class='text-center text-muted'>No hay ventas registradas.</p>";
+        return;
+    }
+
+    contenedor.innerHTML = ventas.map(v => `
+        <div class="card mb-3 shadow-sm">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-0">Ticket: ${v.folio}</h6>
+                    <small class="text-muted">${v.fecha}</small>
+                </div>
+                <div class="text-end">
+                    <span class="fw-bold text-success">$${v.total.toFixed(2)}</span><br>
+                    <small>Atendió: ${v.cajero || 'Admin'}</small>
+                </div>
+            </div>
+        </div>
+    `).reverse().join('');
+}
+//cambiar usuario
+function cambiarCajero() {
+    const nombre = prompt("Ingrese nombre del nuevo cajero:");
+    if (nombre) {
+        localStorage.setItem('cajeroActual', nombre);
+        location.reload();
+    }
+}
+
+function confirmarVenta() {
+    if (carrito.length === 0) return alert("El carrito está vacío");
+    const totalVenta = carrito.reduce((sum, p) => sum + (p.precio * p.cant), 0);
+    const folio = Math.floor(Math.random() * 1000000);
+    const fecha = new Date().toLocaleString();
+
+    const nuevaVenta = {
+        folio: folio,
+        fecha: fecha,
+        total: totalVenta,
+        cajero: cajero,
+        items: [...carrito]
+    };
+    //lo guarda en el local storage por mientras
+    const historial = JSON.parse(localStorage.getItem('historial')) || [];
+    historial.push(nuevaVenta);
+    localStorage.setItem('historial', JSON.stringify(historial));
+
+    const productosDB_local = JSON.parse(localStorage.getItem('productos')) || [];
+    carrito.forEach(itemCarrito => {
+        const p = productosDB.find(pDB => pDB.id === itemCarrito.id);
+        if (p) p.ventas = (p.ventas || 0) + itemCarrito.cant;
+    });
+
+    alert(`Venta guardada con éxito. Folio: ${folio}`);
+    carrito = [];
+    renderVenta();
+    bootstrap.Modal.getInstance(document.getElementById('ticketModal')).hide();
+}
+//cerrar caje
+function cerrarSesion() {
+    if (confirm("¿Estás seguro de que quieres salir del sistema?")) {
+        localStorage.removeItem('cajeroActual');
+        //limpiar carro
+        carrito = [];
+        localStorage.removeItem('carrito');
+        //inicio
+        window.location.href = 'inicio.html';
+    }
+}
+
+function cambiarCajero() {
+    const nombre = prompt("Ingrese nombre del nuevo cajero:");
+    if (nombre) {
+        localStorage.setItem('cajeroActual', nombre);
+        const userTag = document.getElementById('userTag');
+        if (userTag) userTag.innerText = `Cajero: ${nombre}`;
+        location.reload();
+    }
+}
 cargarCatalogo();
