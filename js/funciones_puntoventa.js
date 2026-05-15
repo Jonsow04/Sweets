@@ -1,208 +1,215 @@
-// DATOS DEFINIDOS, ESTOS SE QUITAN CUANDO YA TENGAMOS LA BASE
-const productosDB = [
-    { id: "001", nombre: "Gomitas Gusano", precio: 15.00 },
-    { id: "002", nombre: "Chocolate Suizo", precio: 55.00 },
-    { id: "003", nombre: "Paleta Payaso", precio: 22.50 },
-    { id: "004", nombre: "Caramelo Macizo", precio: 5.00 },
-    { id: "005", nombre: "Bombón Gigante", precio: 10.00 }
-];
-
+let catalogoCompleto = [];
 let carrito = [];
 
-function cargarCatalogo(filtro = "") {
+document.addEventListener('DOMContentLoaded', () => {
+    const cajero = sessionStorage.getItem('cajeroActual') || 'Admin';
+    const userTag = document.getElementById('userTag');
+    if (userTag) userTag.textContent = cajero;
+    cargarCatalogo();
+});
+
+async function cargarCatalogo(filtro = '') {
     const lista = document.getElementById('listaRapida');
-    lista.innerHTML = "";
-
-    const filtrados = productosDB.filter(p =>
-        p.nombre.toLowerCase().includes(filtro.toLowerCase()) ||
-        p.id.includes(filtro)
-    );
-
-    filtrados.forEach(p => {
-        lista.innerHTML += `
-                    <div class="list-item d-flex justify-content-between" onclick="agregarVenta('${p.id}')">
-                        <span>${p.nombre}</span>
-                        <span class="text-muted">$${p.precio.toFixed(2)}</span>
-                    </div>
-                `;
-    });
+    if (!lista) return;
+    try {
+        if (catalogoCompleto.length === 0) {
+            lista.innerHTML = '<p class="text-center text-muted p-3">Cargando...</p>';
+            const resp = await fetch('/api/dulces');
+            catalogoCompleto = await resp.json();
+        }
+        const filtrados = catalogoCompleto.filter(p =>
+            p.nombre.toLowerCase().includes(filtro.toLowerCase()) ||
+            String(p.idDulces).includes(filtro)
+        );
+        if (filtrados.length === 0) {
+            lista.innerHTML = '<p class="text-center text-muted p-3">Sin resultados</p>';
+            return;
+        }
+        lista.innerHTML = filtrados.map(p => `
+            <div class="list-item d-flex justify-content-between align-items-center
+                        ${p.stock === 0 ? 'opacity-50' : ''}"
+                 onclick="${p.stock > 0 ? `agregarAlCarrito(${p.idDulces})` : ''}">
+                <div>
+                    <div class="fw-semibold">${p.nombre}</div>
+                    <small class="text-muted">Stock: ${p.stock}</small>
+                </div>
+                <div class="text-end">
+                    <span class="text-accent fw-bold">$${Number(p.precio).toFixed(2)}</span>
+                    ${p.stock === 0 ? '<br><small class="text-danger">Agotado</small>' : ''}
+                </div>
+            </div>
+        `).join('');
+    } catch (err) {
+        lista.innerHTML = '<p class="text-center text-danger p-3">Error al cargar productos</p>';
+    }
 }
 
 function filtrarInventario() {
-    const busqueda = document.getElementById('navSearch').value;
-    cargarCatalogo(busqueda);
+    cargarCatalogo(document.getElementById('navSearch').value);
 }
 
-function agregarVenta(id) {
-    const prod = productosDB.find(p => p.id === id);
-    const existe = carrito.find(p => p.id === id);
-
+function agregarAlCarrito(idDulce) {
+    const prod = catalogoCompleto.find(p => p.idDulces === idDulce);
+    if (!prod || prod.stock === 0) return;
+    const existe = carrito.find(p => p.idDulces === idDulce);
     if (existe) {
+        if (existe.cant >= prod.stock) { alert(`Stock máximo: ${prod.stock}`); return; }
         existe.cant++;
     } else {
-        carrito.push({...prod, cant: 1 });
+        carrito.push({ ...prod, cant: 1 });
     }
-    renderVenta();
+    renderCarrito();
 }
 
-function renderVenta() {
-    const tbody = document.querySelector("#tablaVentas tbody");
-    tbody.innerHTML = "";
-    let total = 0;
-
-    carrito.forEach((p, idx) => {
-        const sub = p.precio * p.cant;
-        total += sub;
-        tbody.innerHTML += `
-                    <tr>
-                        <td>${p.nombre}</td>
-                        <td>$${p.precio.toFixed(2)}</td>
-                        <td><input type="number" class="form-control form-control-sm" value="${p.cant}" onchange="editCant(${idx}, this.value)"></td>
-                        <td class="fw-bold">$${sub.toFixed(2)}</td>
-                        <td><button class="btn btn-sm text-danger" onclick="borrarItem(${idx})">×</button></td>
-                    </tr>
-                `;
-    });
-    document.getElementById('granTotal').textContent = `$${total.toFixed(2)}`;
+function cambiarCantidad(idDulce, delta) {
+    const item = carrito.find(p => p.idDulces === idDulce);
+    const prod = catalogoCompleto.find(p => p.idDulces === idDulce);
+    if (!item) return;
+    item.cant += delta;
+    if (item.cant <= 0) carrito = carrito.filter(p => p.idDulces !== idDulce);
+    else if (prod && item.cant > prod.stock) item.cant = prod.stock;
+    renderCarrito();
 }
 
-function editCant(idx, val) {
-    carrito[idx].cant = val < 1 ? 1 : parseInt(val);
-    renderVenta();
+function quitarDelCarrito(idDulce) {
+    carrito = carrito.filter(p => p.idDulces !== idDulce);
+    renderCarrito();
 }
 
-function borrarItem(idx) {
-    carrito.splice(idx, 1);
-    renderVenta();
-}
-//ticket
-document.getElementById('ticketModal').addEventListener('show.bs.modal', () => {
-    document.getElementById('fechaTicket').textContent = new Date().toLocaleString();
-    const cont = document.getElementById('listaProductosTicket');
-    const total = document.getElementById('granTotal').textContent;
-
-    cont.innerHTML = carrito.map(p => `
-                <div class="d-flex justify-content-between small">
-                    <span>${p.cant}x ${p.nombre}</span>
-                    <span>$${(p.precio * p.cant).toFixed(2)}</span>
-                </div>
-            `).join('');
-    document.getElementById('totalTicketModal').textContent = total;
-});
-
-function confirmarVenta() {
-    alert("Venta guardada.");
+function limpiarCarrito() {
     carrito = [];
-    renderVenta();
-    bootstrap.Modal.getInstance(document.getElementById('ticketModal')).hide();
+    renderCarrito();
 }
 
-function mostrarHistorialCompleto() {
-    const ventas = JSON.parse(localStorage.getItem('historial')) || [];
-    const contenedor = document.getElementById('contenedorHistorial'); // ID en historial.html
+function renderCarrito() {
+    const tbody = document.querySelector('#tablaVentas tbody');
+    const carritoVacio = document.getElementById('carritoVacio');
+    const totalDisplay = document.getElementById('totalDisplay');
+    if (!tbody) return;
 
-    if (ventas.length === 0) {
-        contenedor.innerHTML = "<p class='text-center'>No hay ventas registradas.</p>";
+    if (carrito.length === 0) {
+        tbody.innerHTML = '';
+        if (carritoVacio) carritoVacio.style.display = 'block';
+        if (totalDisplay) totalDisplay.textContent = '$0.00';
+        document.getElementById('cambioBox').style.display = 'none';
         return;
     }
 
-    contenedor.innerHTML = ventas.map(v => `
-        <div class="card mb-3 shadow-sm">
-            <div class="card-body d-flex justify-content-between align-items-center">
-                <div>
-                    <h6 class="mb-0">Ticket: ${v.folio}</h6>
-                    <small class="text-muted">${v.fecha}</small>
+    if (carritoVacio) carritoVacio.style.display = 'none';
+    tbody.innerHTML = carrito.map(item => `
+        <tr>
+            <td>${item.nombre}</td>
+            <td class="text-center">
+                <div class="d-flex align-items-center justify-content-center gap-1">
+                    <button class="btn btn-sm btn-outline-secondary py-0 px-1"
+                            onclick="cambiarCantidad(${item.idDulces}, -1)">−</button>
+                    <span class="mx-1">${item.cant}</span>
+                    <button class="btn btn-sm btn-outline-secondary py-0 px-1"
+                            onclick="cambiarCantidad(${item.idDulces}, 1)">+</button>
                 </div>
-                <div class="text-end">
-                    <span class="fw-bold text-success">$${v.total.toFixed(2)}</span><br>
-                    <small>Atendió: ${v.cajero || 'Admin'}</small>
-                </div>
-            </div>
-        </div>
-    `).reverse().join('');
+            </td>
+            <td class="text-end">$${Number(item.precio).toFixed(2)}</td>
+            <td class="text-end fw-bold">$${(item.precio * item.cant).toFixed(2)}</td>
+            <td class="text-center">
+                <button class="btn btn-sm btn-outline-danger py-0"
+                        onclick="quitarDelCarrito(${item.idDulces})">✕</button>
+            </td>
+        </tr>
+    `).join('');
+
+    const total = carrito.reduce((acc, i) => acc + i.precio * i.cant, 0);
+    if (totalDisplay) totalDisplay.textContent = `$${total.toFixed(2)}`;
+    calcularCambio();
 }
 
-function mostrarHistorialCompleto() {
-    const ventas = JSON.parse(localStorage.getItem('historial')) || [];
-    const contenedor = document.getElementById('contenedorHistorial');
-
-    if (ventas.length === 0) {
-        contenedor.innerHTML = "<p class='text-center text-muted'>No hay ventas registradas.</p>";
-        return;
-    }
-
-    contenedor.innerHTML = ventas.map(v => `
-        <div class="card mb-3 shadow-sm">
-            <div class="card-body d-flex justify-content-between align-items-center">
-                <div>
-                    <h6 class="mb-0">Ticket: ${v.folio}</h6>
-                    <small class="text-muted">${v.fecha}</small>
-                </div>
-                <div class="text-end">
-                    <span class="fw-bold text-success">$${v.total.toFixed(2)}</span><br>
-                    <small>Atendió: ${v.cajero || 'Admin'}</small>
-                </div>
-            </div>
-        </div>
-    `).reverse().join('');
-}
-//cambiar usuario
-function cambiarCajero() {
-    const nombre = prompt("Ingrese nombre del nuevo cajero:");
-    if (nombre) {
-        localStorage.setItem('cajeroActual', nombre);
-        location.reload();
+function calcularCambio() {
+    const total = carrito.reduce((acc, i) => acc + i.precio * i.cant, 0);
+    const pago = parseFloat(document.getElementById('inputPago').value) || 0;
+    const cambioBox = document.getElementById('cambioBox');
+    const cambioDisplay = document.getElementById('cambioDisplay');
+    if (pago > 0 && carrito.length > 0) {
+        const cambio = pago - total;
+        cambioDisplay.textContent = `$${cambio.toFixed(2)}`;
+        cambioDisplay.className = cambio >= 0 ? 'fw-bold text-success' : 'fw-bold text-danger';
+        cambioBox.style.display = 'flex';
+    } else {
+        cambioBox.style.display = 'none';
     }
 }
 
-function confirmarVenta() {
-    if (carrito.length === 0) return alert("El carrito está vacío");
-    const totalVenta = carrito.reduce((sum, p) => sum + (p.precio * p.cant), 0);
-    const folio = Math.floor(Math.random() * 1000000);
-    const fecha = new Date().toLocaleString();
+async function cobrar() {
+    if (carrito.length === 0) { alert('El carrito está vacío'); return; }
+    const total = carrito.reduce((acc, i) => acc + i.precio * i.cant, 0);
+    const pago = parseFloat(document.getElementById('inputPago').value) || 0;
+    if (pago > 0 && pago < total) { alert('El pago es insuficiente'); return; }
 
-    const nuevaVenta = {
-        folio: folio,
-        fecha: fecha,
-        total: totalVenta,
-        cajero: cajero,
-        items: [...carrito]
-    };
-    //lo guarda en el local storage por mientras
-    const historial = JSON.parse(localStorage.getItem('historial')) || [];
-    historial.push(nuevaVenta);
-    localStorage.setItem('historial', JSON.stringify(historial));
+    const cajero = sessionStorage.getItem('cajeroActual') || 'Admin';
+    const items = carrito.map(i => ({ idDulce: i.idDulces, cantidad: i.cant, precio: i.precio }));
 
-    const productosDB_local = JSON.parse(localStorage.getItem('productos')) || [];
-    carrito.forEach(itemCarrito => {
-        const p = productosDB.find(pDB => pDB.id === itemCarrito.id);
-        if (p) p.ventas = (p.ventas || 0) + itemCarrito.cant;
-    });
+    try {
+        const resp = await fetch('/api/ventas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ items, empleado_nombre: cajero })
+        });
+        if (!resp.ok) { const err = await resp.json(); throw new Error(err.error); }
+        const data = await resp.json();
+        mostrarTicket(data, cajero, pago);
 
-    alert(`Venta guardada con éxito. Folio: ${folio}`);
-    carrito = [];
-    renderVenta();
-    bootstrap.Modal.getInstance(document.getElementById('ticketModal')).hide();
-}
-//cerrar caje
-function cerrarSesion() {
-    if (confirm("¿Estás seguro de que quieres salir del sistema?")) {
-        localStorage.removeItem('cajeroActual');
-        //limpiar carro
+        for (const item of carrito) {
+            const prod = catalogoCompleto.find(p => p.idDulces === item.idDulces);
+            if (prod) prod.stock -= item.cant;
+        }
         carrito = [];
-        localStorage.removeItem('carrito');
-        //inicio
-        window.location.href = 'inicio.html';
+        renderCarrito();
+        cargarCatalogo();
+        document.getElementById('inputPago').value = '';
+    } catch (err) {
+        alert('Error: ' + err.message);
     }
 }
 
-function cambiarCajero() {
-    const nombre = prompt("Ingrese nombre del nuevo cajero:");
-    if (nombre) {
-        localStorage.setItem('cajeroActual', nombre);
-        const userTag = document.getElementById('userTag');
-        if (userTag) userTag.innerText = `Cajero: ${nombre}`;
-        location.reload();
+function mostrarTicket(venta, cajero, pago) {
+    const cambio = pago > 0 ? pago - venta.total : 0;
+    const fecha = new Date().toLocaleString('es-MX');
+    document.getElementById('ticketContenido').innerHTML = `
+        <div style="font-family:monospace;font-size:0.85rem">
+            <div class="text-center mb-2">
+                <strong>🍬 SWEET DREAMS</strong><br>
+                <small>${fecha}</small><br>
+                <small>Folio: #${venta.idVenta} | Cajero: ${cajero}</small>
+            </div>
+            <hr>
+            ${carrito.length ? '' : '<p class="text-center text-muted">Venta registrada</p>'}
+            <hr>
+            <div class="d-flex justify-content-between fw-bold">
+                <span>TOTAL</span><span>$${Number(venta.total).toFixed(2)}</span>
+            </div>
+            ${pago > 0 ? `
+            <div class="d-flex justify-content-between">
+                <span>Pago</span><span>$${pago.toFixed(2)}</span>
+            </div>
+            <div class="d-flex justify-content-between text-success fw-bold">
+                <span>Cambio</span><span>$${cambio.toFixed(2)}</span>
+            </div>` : ''}
+            <hr>
+            <div class="text-center"><small>¡Gracias por su compra! 🍬</small></div>
+        </div>`;
+    new bootstrap.Modal(document.getElementById('modalTicket')).show();
+}
+
+async function hacerCorte() {
+    if (!confirm('¿Realizar corte de caja?')) return;
+    try {
+        const resp = await fetch('/api/cortes', { method: 'POST' });
+        const data = await resp.json();
+        alert(`✅ Corte realizado\nVentas: ${data.numVentas}\nTotal: $${Number(data.total).toFixed(2)}`);
+    } catch (err) {
+        alert('Error: ' + err.message);
     }
 }
-cargarCatalogo();
+
+function cerrarSesion() {
+    sessionStorage.clear();
+    window.location.href = 'inicio.html';
+}

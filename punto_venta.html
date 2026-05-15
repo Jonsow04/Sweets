@@ -4,8 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sweets Dreams</title>
-    <!-- Bootstrap 5 -->
+    <title>Sweet Dreams - POS</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/estilo_puntoventa.css">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -16,93 +15,92 @@
     <nav class="navbar navbar-expand-lg navbar-pos">
         <div class="container-fluid">
             <a class="navbar-brand fw-bold" href="#">🍬 SWEET DREAMS</a>
-
             <div class="collapse navbar-collapse">
                 <form class="d-flex mx-auto" onsubmit="return false;">
-                    <input class="form-control search-nav" type="search" id="navSearch" placeholder="🔍 Buscar producto o ID..." onkeyup="filtrarInventario()">
+                    <input class="form-control search-nav" type="search" id="navSearch" placeholder="🔍 Buscar producto..." onkeyup="filtrarInventario()">
                 </form>
-
-                <!-- botones-->
                 <div class="navbar-nav">
                     <button class="btn nav-btn" onclick="window.location.href='historial.html'">🕒 Historial</button>
                     <button class="btn nav-btn" onclick="window.location.href='mas_vendido.html'">⭐ Más Vendidos</button>
-                    <button class="btn nav-btn" onclick="window.location.href='productos.html'">📦 Productos</button>
-                    <div class="vr mx-2"></div>
-                    <a class="dropdown-item text-danger" href="#" onclick="cerrarSesion()"> 🚪 Cerrar sesión  </a>
-
+                    <button class="btn nav-btn" onclick="window.location.href='productos.html'">📦 Inventario</button>
+                    <div class="dropdown ms-2">
+                        <button class="btn nav-btn dropdown-toggle" data-bs-toggle="dropdown">
+                            👤 <span id="userTag">Admin</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item text-danger" href="#" onclick="cerrarSesion()">🚪 Cerrar sesión</a></li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
     </nav>
 
     <div class="app-container">
-        <!-- productos sugerids -->
         <div class="sidebar-left">
-            <div class="p-3 fw-bold border-bottom small text-muted">CATÁLOGO</div>
+            <div class="p-2 border-bottom">
+                <strong style="color:var(--accent)">📋 Catálogo</strong>
+            </div>
             <div class="product-list" id="listaRapida">
+                <p class="text-center text-muted p-3">Cargando...</p>
             </div>
         </div>
 
-        <!-- CENTRO: TABLA DE VENTA -->
         <div class="main-content">
-            <h5 class="mb-3 fw-bold">Venta Actual</h5>
+            <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+                <h6 class="mb-0 fw-bold">🛒 Venta Actual</h6>
+                <button class="btn btn-sm btn-outline-danger" onclick="limpiarCarrito()">🗑 Vaciar</button>
+            </div>
             <div class="table-responsive">
-                <table class="table" id="tablaVentas">
+                <table class="table table-sm" id="tablaVentas">
                     <thead class="table-light">
                         <tr>
-                            <th>Descripción</th>
-                            <th>Precio</th>
-                            <th class="col-cant">Cant.</th>
-                            <th>Total</th>
+                            <th>Producto</th>
+                            <th class="text-center">Cant.</th>
+                            <th class="text-end">Precio</th>
+                            <th class="text-end">Subtotal</th>
                             <th></th>
                         </tr>
                     </thead>
-                    <tbody>
-                    </tbody>
+                    <tbody></tbody>
                 </table>
+            </div>
+            <div id="carritoVacio" class="text-center text-muted p-5">
+                <p>Selecciona productos del catálogo</p>
             </div>
         </div>
 
-        <!-- cobrar -->
         <div class="sidebar-right">
-            <h6>Resumen</h6>
-            <div class="total-display">
-                <small>TOTAL A COBRAR</small>
-                <div class="h2 m-0 fw-bold" id="granTotal">$0.00</div>
+            <div class="p-3">
+                <div class="total-box mb-3">
+                    <span class="text-muted">Total</span>
+                    <span class="total-amount" id="totalDisplay">$0.00</span>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small text-muted">Pago recibido</label>
+                    <input type="number" class="form-control" id="inputPago" placeholder="$0.00" min="0" step="0.01" oninput="calcularCambio()">
+                </div>
+                <div class="cambio-box mb-3" id="cambioBox" style="display:none">
+                    <span class="text-muted">Cambio</span>
+                    <span class="fw-bold text-success" id="cambioDisplay">$0.00</span>
+                </div>
+                <button class="btn btn-cobrar w-100 mb-2" onclick="cobrar()">💳 COBRAR</button>
+                <button class="btn btn-outline-secondary w-100 btn-sm" onclick="hacerCorte()">📊 Corte de Caja</button>
             </div>
-
-            <div class="mb-4">
-                <label class="small text-muted" for="metodoPago">Método de pago</label>
-                <select id="metodoPago" class="form-select border-0 bg-light">
-                        <option>Efectivo</option>
-                        <option>Tarjeta</option>
-                        <option>Transferencia</option>
-                    </select>
-            </div>
-
-            <button class="btn-pay" data-bs-toggle="modal" data-bs-target="#ticketModal">
-                FINALIZAR VENTA
-            </button>
         </div>
     </div>
 
-    <div class="modal fade" id="ticketModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal fade" id="modalTicket" tabindex="-1">
+        <div class="modal-dialog modal-sm">
             <div class="modal-content">
-                <div class="modal-body ticket-font" id="impresionTicket">
-                    <div class="text-center mb-3">
-                        <strong>SWEET DREAMS</strong><br>
-                        <span id="fechaTicket"></span>
-                    </div>
-                    <div id="listaProductosTicket"></div>
-                    <hr>
-                    <div class="d-flex justify-content-between fw-bold">
-                        <span>TOTAL</span>
-                        <span id="totalTicketModal"></span>
-                    </div>
+                <div class="modal-header">
+                    <h5 class="modal-title">🧾 Ticket</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-footer p-1 border-0">
-                    <button type="button" class="btn btn-primary w-100" onclick="confirmarVenta()">CERRAR</button>
+                <div class="modal-body" id="ticketContenido"></div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+                    <button class="btn btn-primary btn-sm" onclick="window.print()">🖨 Imprimir</button>
                 </div>
             </div>
         </div>
