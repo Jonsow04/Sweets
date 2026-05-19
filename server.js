@@ -10,6 +10,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
 
+// ─── CONEXIÓN A LA BASE DE DATOS ─────────────────────────────────────────────
 const db = mysql.createConnection({
     host: 'localhost',
     user: 'root',
@@ -26,6 +27,11 @@ db.connect((err) => {
     console.log('✅ Conectado a MySQL - Base de datos: sweets');
 });
 
+db.on('error', (err) => {
+    console.error('MySQL error:', err);
+});
+
+// QUERY
 function query(sql, params = []) {
     return new Promise((resolve, reject) => {
         db.query(sql, params, (err, results) => {
@@ -33,6 +39,14 @@ function query(sql, params = []) {
             else resolve(results);
         });
     });
+}
+
+// FECHA
+function getFechaLocal() {
+    const ahora = new Date();
+    const offset = -7; // UTC-7 en verano (mayo-noviembre), cambia a -6 en invierno
+    const local = new Date(ahora.getTime() + offset * 60 * 60 * 1000);
+    return local.toISOString().split('T')[0]; // YYYY-MM-DD
 }
 /*
 // LOGIN
@@ -58,7 +72,7 @@ app.post('/api/login', async (req, res) => {
     }
 });*/
 
-// DULCES
+//DULCES
 app.get('/api/dulces', async(req, res) => {
     try {
         const rows = await query(`
@@ -76,7 +90,9 @@ app.get('/api/dulces', async(req, res) => {
 
 app.get('/api/dulces/:id', async(req, res) => {
     try {
-        const rows = await query('SELECT * FROM dulce WHERE idDulces = ?', [req.params.id]);
+        const rows = await query(
+            'SELECT * FROM dulce WHERE idDulces = ?', [req.params.id]
+        );
         if (rows.length === 0) return res.status(404).json({ error: 'No encontrado' });
         res.json(rows[0]);
     } catch (err) {
@@ -86,8 +102,9 @@ app.get('/api/dulces/:id', async(req, res) => {
 
 app.post('/api/dulces', async(req, res) => {
     const { nombre, precio, stock, idTipoDulce } = req.body;
-    if (!nombre || precio == null || stock == null || !idTipoDulce)
+    if (!nombre || precio == null || stock == null || !idTipoDulce) {
         return res.status(400).json({ error: 'Faltan campos requeridos' });
+    }
     try {
         const result = await query(
             'INSERT INTO dulce (nombre, precio, stock, idTipoDulce) VALUES (?, ?, ?, ?)', [nombre, precio, stock, idTipoDulce]
@@ -121,7 +138,7 @@ app.delete('/api/dulces/:id', async(req, res) => {
     }
 });
 
-// TIPOS
+// TIPOS DULCES
 app.get('/api/tipos', async(req, res) => {
     try {
         const rows = await query('SELECT * FROM tipodulce ORDER BY descripcionDulce');
@@ -172,10 +189,12 @@ app.get('/api/ventas', async(req, res) => {
 
 app.post('/api/ventas', async(req, res) => {
     const { items, empleado_nombre } = req.body;
-    if (!items || items.length === 0)
+    if (!items || items.length === 0) {
         return res.status(400).json({ error: 'El carrito está vacío' });
+    }
 
     try {
+        // Cliente genérico
         let clienteId = 1;
         const clientes = await query("SELECT idCliente FROM cliente WHERE nombre = 'Cliente General'");
         if (clientes.length === 0) {
@@ -207,7 +226,7 @@ app.post('/api/ventas', async(req, res) => {
         }
 
         const total = items.reduce((acc, i) => acc + (i.precio * i.cantidad), 0);
-        const fecha = new Date().toISOString().split('T')[0];
+        const fecha = getFechaLocal();
 
         const ventaResult = await query(
             'INSERT INTO venta (fecha, idEmpleado, idCliente, total) VALUES (?, ?, ?, ?)', [fecha, empleadoId, clienteId, total]
@@ -223,14 +242,21 @@ app.post('/api/ventas', async(req, res) => {
             );
         }
 
-        res.status(201).json({ ok: true, idVenta, total, fecha, cajero: empleado_nombre || 'Admin' });
+        res.status(201).json({
+            ok: true,
+            idVenta,
+            total,
+            fecha,
+            cajero: empleado_nombre || 'Admin'
+        });
+
     } catch (err) {
         console.error('Error registrando venta:', err);
         res.status(500).json({ error: err.message });
     }
 });
 
-// MÁS VENDIDOS
+// MAS VENDIDO
 app.get('/api/masvendidos', async(req, res) => {
     try {
         const rows = await query(`
@@ -247,7 +273,7 @@ app.get('/api/masvendidos', async(req, res) => {
     }
 });
 
-// CORTES
+// CORTE
 app.get('/api/cortes', async(req, res) => {
     try {
         const rows = await query('SELECT * FROM corteventa ORDER BY fechaCorte DESC');
@@ -267,18 +293,25 @@ app.post('/api/cortes', async(req, res) => {
             WHERE v.idCorteVenta IS NULL
         `);
         const { total, numVentas } = stats[0];
-        const fecha = new Date().toISOString().split('T')[0];
+
+        const fecha = getFechaLocal();
+
         const result = await query(
             'INSERT INTO corteventa (fechaCorte, totalVentas, numVentas, createAt) VALUES (?, ?, ?, NOW())', [fecha, total, numVentas]
         );
         const idCorte = result.insertId;
+
         await query('UPDATE venta SET idCorteVenta = ? WHERE idCorteVenta IS NULL', [idCorte]);
+
         res.json({ ok: true, idCorte, total, numVentas, fecha });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
+// SERVER
 app.listen(PORT, () => {
-    console.log(`\n🍬 Sweet Dreams corriendo en http://localhost:${PORT}\n`);
+    console.log(`\n🍬 Sweet Dreams corriendo en http://localhost:${PORT}`);
+    console.log(`   Fecha local actual: ${getFechaLocal()}`);
+    console.log(`   Abre esa URL en tu navegador.\n`);
 });
