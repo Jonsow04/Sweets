@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sweet Dreams - POS</title>
+    <title>Sweet Dreams - Punto de Venta</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/estilo_puntoventa.css">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -12,23 +12,51 @@
 </head>
 
 <body>
+
+    <!-- NAVBAR -->
     <nav class="navbar navbar-expand-lg navbar-pos">
         <div class="container-fluid">
             <a class="navbar-brand fw-bold" href="#">🍬 SWEET DREAMS</a>
+
             <div class="collapse navbar-collapse">
                 <form class="d-flex mx-auto" onsubmit="return false;">
                     <input class="form-control search-nav" type="search" id="navSearch" placeholder="🔍 Buscar producto..." onkeyup="filtrarInventario()">
                 </form>
-                <div class="navbar-nav">
-                    <button class="btn nav-btn" onclick="window.location.href='historial.html'">🕒 Historial</button>
-                    <button class="btn nav-btn" onclick="window.location.href='mas_vendido.html'">⭐ Más Vendidos</button>
-                    <button class="btn nav-btn" onclick="window.location.href='productos.html'">📦 Inventario</button>
-                    <div class="dropdown ms-2">
+
+                <div class="navbar-nav align-items-center">
+                    <!-- Historial: cajero ve solo hoy, admin ve todo -->
+                    <button class="btn nav-btn" onclick="window.location.href='historial.html'">
+                        🕒 Historial
+                    </button>
+                    <!-- Más vendidos: todos -->
+                    <button class="btn nav-btn" onclick="window.location.href='mas_vendido.html'">
+                        ⭐ Más Vendidos
+                    </button>
+                    <!-- Inventario: solo admin -->
+                    <button class="btn nav-btn solo-admin d-none" onclick="window.location.href='productos.html'">
+                        📦 Inventario
+                    </button>
+                    <!-- Empleados: solo admin -->
+                    <button class="btn nav-btn solo-admin d-none" onclick="window.location.href='empleados.html'">
+                        👥 Empleados
+                    </button>
+
+                    <!-- Badge de rol -->
+                    <span id="badgeRol" class="badge ms-2 me-1"></span>
+
+                    <!-- Usuario -->
+                    <div class="dropdown">
                         <button class="btn nav-btn dropdown-toggle" data-bs-toggle="dropdown">
-                            👤 <span id="userTag">Admin</span>
+                            👤 <span id="userTag">...</span>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item text-danger" href="#" onclick="cerrarSesion()">🚪 Cerrar sesión</a></li>
+                            <li><span class="dropdown-item-text text-muted small" id="puestoTag"></span></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item text-danger" href="#" onclick="cerrarSesion()">
+                                🚪 Cerrar sesión
+                            </a></li>
                         </ul>
                     </div>
                 </div>
@@ -36,16 +64,21 @@
         </div>
     </nav>
 
+    <!-- CONTENIDO -->
     <div class="app-container">
+
+        <!-- Catálogo -->
         <div class="sidebar-left">
-            <div class="p-2 border-bottom">
+            <div class="p-2 border-bottom d-flex justify-content-between align-items-center">
                 <strong style="color:var(--accent)">📋 Catálogo</strong>
+                <small class="text-muted" id="contadorProductos"></small>
             </div>
             <div class="product-list" id="listaRapida">
                 <p class="text-center text-muted p-3">Cargando...</p>
             </div>
         </div>
 
+        <!-- Tabla de venta -->
         <div class="main-content">
             <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
                 <h6 class="mb-0 fw-bold">🛒 Venta Actual</h6>
@@ -66,10 +99,11 @@
                 </table>
             </div>
             <div id="carritoVacio" class="text-center text-muted p-5">
-                <p>Selecciona productos del catálogo</p>
+                <p>Selecciona productos del catálogo para agregar a la venta</p>
             </div>
         </div>
 
+        <!-- Cobrar -->
         <div class="sidebar-right">
             <div class="p-3">
                 <div class="total-box mb-3">
@@ -82,19 +116,23 @@
                 </div>
                 <div class="cambio-box mb-3" id="cambioBox" style="display:none">
                     <span class="text-muted">Cambio</span>
-                    <span class="fw-bold text-success" id="cambioDisplay">$0.00</span>
+                    <span class="fw-bold" id="cambioDisplay">$0.00</span>
                 </div>
                 <button class="btn btn-cobrar w-100 mb-2" onclick="cobrar()">💳 COBRAR</button>
-                <button class="btn btn-outline-secondary w-100 btn-sm" onclick="hacerCorte()">📊 Corte de Caja</button>
+                <!-- Corte de caja: solo admin -->
+                <button class="btn btn-outline-secondary w-100 btn-sm solo-admin d-none" onclick="hacerCorte()">
+                    📊 Corte de Caja
+                </button>
             </div>
         </div>
     </div>
 
+    <!-- MODAL TICKET -->
     <div class="modal fade" id="modalTicket" tabindex="-1">
         <div class="modal-dialog modal-sm">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">🧾 Ticket</h5>
+                    <h5 class="modal-title">🧾 Ticket de Venta</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body" id="ticketContenido"></div>
@@ -105,6 +143,7 @@
             </div>
         </div>
     </div>
+
 </body>
 
 </html>
